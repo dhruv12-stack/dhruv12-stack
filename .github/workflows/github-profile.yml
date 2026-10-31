@@ -1,0 +1,118 @@
+name: Update GitHub Profile Cards
+
+on:
+  schedule:
+    # Run approximately every 30 minutes
+    - cron: "*/30 * * * *"
+
+  # Allows manual execution from GitHub Actions
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: github-profile-cards
+  cancel-in-progress: false
+
+jobs:
+  update-profile:
+    name: Generate GitHub Profile Cards
+    runs-on: ubuntu-latest
+
+    steps:
+      # ==========================================
+      # Checkout repository
+      # ==========================================
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      # ==========================================
+      # Create profile directory
+      # ==========================================
+      - name: Create profile directory
+        run: mkdir -p profile
+
+      # ==========================================
+      # GitHub Stats
+      # ==========================================
+      - name: Generate GitHub Stats
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: stats
+          options: >-
+            username=${{ github.repository_owner }}&
+            show_icons=true&
+            theme=synthwave&
+            hide_border=true&
+            bg_color=00000000
+          path: profile/stats.svg
+          token: ${{ github.token }}
+          fail_on_error: true
+
+      # ==========================================
+      # Top Languages
+      # ==========================================
+      - name: Generate Top Languages
+        uses: stats-organization/github-readme-stats-action@v2
+        with:
+          card: top-langs
+          options: >-
+            username=${{ github.repository_owner }}&
+            layout=compact&
+            theme=synthwave&
+            hide_border=true&
+            bg_color=00000000
+          path: profile/top-langs.svg
+          token: ${{ github.token }}
+          fail_on_error: true
+
+      # ==========================================
+      # GitHub Activity Graph
+      # ==========================================
+      - name: Generate Activity Graph
+        uses: maurodesouza/github-readme-activity-graph-action@v1
+        with:
+          username: ${{ github.repository_owner }}
+          options: >-
+            theme=react-dark&
+            hide_border=true&
+            bg_color=00000000&
+            color=FF6A00&
+            line=FF1E8E&
+            point=00E0FF
+          output_path: profile/activity.svg
+          token: ${{ github.token }}
+
+      # ==========================================
+      # GitHub Trophies
+      # ==========================================
+      - name: Generate GitHub Trophies
+        uses: soulteary/github-profile-trophy-action@v1.0.0
+        with:
+          options: >-
+            username=${{ github.repository_owner }}&
+            theme=radical&
+            no-frame=true&
+            column=4&
+            margin-w=8&
+            margin-h=8
+          path: profile/trophy.svg
+          token: ${{ github.token }}
+
+      # ==========================================
+      # Commit generated SVG files
+      # ==========================================
+      - name: Commit updated profile cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add profile/*.svg
+
+          if git diff --cached --quiet; then
+            echo "No changes detected. Nothing to commit."
+          else
+            git commit -m "chore: update GitHub profile cards"
+            git push
+          fi
